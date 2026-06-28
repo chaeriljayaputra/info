@@ -1,4 +1,7 @@
-# info.py - OUR VERSION (Vercel Ready, Proto Folder)
+# info.py - OUR VERSION (Vercel Ready, SG & ID Only)
+# Owner : @vaibhavff570
+# Join : @vaibhavapix, @vaibhavapisx
+
 import json
 import sys
 import os
@@ -15,147 +18,177 @@ from Crypto.Cipher import AES
 # ==================== CONFIG ====================
 G = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
 F = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
+REGNS = {"SG", "ID"}
+SERVER_URL = "https://clientbp.ggpolarbear.com"
 
-CREDENTIALS = {
-    "SG": "uid=5374557838&password=ANONFK345213AKU",
-    "ID": "uid=5374558199&password=ANONFK54734ULRW",
-}
-
-app = Flask(__name__)
-CORS(app)
+FAHHHH = Flask(__name__)
+CORS(FAHHHH)
 
 # ==================== HELPERS ====================
-def pad(d):
+def BmwNoNoBmvYas(d):
     l = AES.block_size - (len(d) % AES.block_size)
     return d + bytes([l] * l)
 
-def encrypt(k, i, d):
-    return AES.new(k, AES.MODE_CBC, i).encrypt(pad(d))
+def BmwNoiNoiBmvYasYas(k, i, d):
+    a = AES.new(k, AES.MODE_CBC, i)
+    return a.encrypt(BmwNoNoBmvYas(d))
 
-def parse_pb(b, mt):
+def PoI(b, mt):
     m = mt()
     m.ParseFromString(b)
     return m
 
-def json2pb(js, pt):
-    json_format.ParseDict(json.loads(js), pt)
+def QwE(jt, pt):
+    json_format.ParseDict(json.loads(jt), pt)
     return pt.SerializeToString()
 
-# ==================== TOKEN GENERATOR ====================
-def generate_token(region):
-    """Generate token - SYNC"""
-    creds = CREDENTIALS.get(region, CREDENTIALS["SG"])
+def AsD(reg):
+    reg = reg.upper()
+    if reg == "SG":
+        return "uid=5374557838&password=ANONFK345213AKU"
+    elif reg == "ID":
+        return "uid=5374558199&password=ANONFK54734ULRW"
+    else:
+        return "uid=5374557838&password=ANONFK345213AKU"
+
+# ==================== TOKEN GENERATOR (SYNC) ====================
+def ZxV(acc):
+    url = "https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant"
+    data = acc + "&response_type=token&client_type=2&client_secret=2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3&client_id=100067"
     try:
-        # Step 1: OAuth
-        data = creds + "&response_type=token&client_type=2&client_secret=2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3&client_id=100067"
-        r = requests.post(
-            "https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant",
-            data=data,
-            headers={'Content-Type': "application/x-www-form-urlencoded", 'User-Agent': "Dalvik/2.1.0"},
-            timeout=30
-        )
-        d = r.json()
-        token, oid = d.get("access_token", "0"), d.get("open_id", "0")
-        if token == "0": return None
-        
-        # Step 2: MajorLogin
-        body = json.dumps({"open_id": oid, "open_id_type": "4", "login_token": token, "orign_platform_type": "4"})
-        pb = json2pb(body, FreeFire_pb2.LoginReq())
-        enc = encrypt(G, F, pb)
-        
-        r = requests.post(
+        res = requests.post(url, data=data, headers={
+            'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 13; CPH2095 Build/RKQ1.211119.001)",
+            'Connection': "Keep-Alive",
+            'Accept-Encoding': "gzip",
+            'Content-Type': "application/x-www-form-urlencoded"
+        }, timeout=30)
+        d = res.json()
+        return d.get("access_token", "0"), d.get("open_id", "0")
+    except:
+        return "0", "0"
+
+def Bmw(reg):
+    acc = AsD(reg)
+    token, oid = ZxV(acc)
+    if token == "0":
+        return None
+    
+    body = json.dumps({"open_id": oid, "open_id_type": "4", "login_token": token, "orign_platform_type": "4"})
+    pb = QwE(body, FreeFire_pb2.LoginReq())
+    enc = BmwNoiNoiBmvYasYas(G, F, pb)
+    
+    try:
+        res = requests.post(
             "https://loginbp.ggpolarbear.com/MajorLogin",
             data=enc,
             headers={
+                'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 13; CPH2095 Build/RKQ1.211119.001)",
+                'Connection': "Keep-Alive",
+                'Accept-Encoding': "gzip",
                 'Content-Type': "application/octet-stream",
+                'Expect': "100-continue",
                 'X-Unity-Version': "2018.4.11f1",
                 'X-GA': "v1 1",
-                'ReleaseVersion': "OB54",
-                'User-Agent': "Dalvik/2.1.0"
+                'ReleaseVersion': "OB54"
             },
             timeout=30
         )
         
-        if r.status_code == 200:
-            msg = json.loads(json_format.MessageToJson(parse_pb(r.content, FreeFire_pb2.LoginRes)))
-            return f"Bearer {msg.get('token', '0')}"
+        if res.status_code == 200:
+            msg = json.loads(json_format.MessageToJson(PoI(res.content, FreeFire_pb2.LoginRes)))
+            return {
+                'token': f"Bearer {msg.get('token','0')}",
+                'region': msg.get('lockRegion','0'),
+                'server': msg.get('serverUrl','0')
+            }
         return None
-    except Exception as e:
-        print(f"Token error: {e}")
-        return None
-
-# ==================== PLAYER FETCH ====================
-def fetch_player(uid, token):
-    """Fetch player data - SYNC"""
-    try:
-        body = json.dumps({'a': str(uid), 'b': '7'})
-        pb = json2pb(body, main_pb2.GetPlayerPersonalShow())
-        enc = encrypt(G, F, pb)
-        
-        r = requests.post(
-            "https://clientbp.ggpolarbear.com/GetPlayerPersonalShow",
-            data=enc,
-            headers={
-                'Content-Type': "application/octet-stream",
-                'Authorization': token if token.startswith("Bearer ") else f"Bearer {token}",
-                'X-Unity-Version': "2018.4.11f1",
-                'X-GA': "v1 1",
-                'ReleaseVersion': "OB54",
-                'User-Agent': "Dalvik/2.1.0"
-            },
-            timeout=30
-        )
-        
-        if r.status_code == 200:
-            data = json.loads(json_format.MessageToJson(parse_pb(r.content, AccountPersonalShow_pb2.AccountPersonalShowInfo)))
-            return data
-        return None
-    except Exception as e:
-        print(f"Fetch error: {e}")
+    except:
         return None
 
-# ==================== ROUTES ====================
-@app.route("/", methods=["GET"])
-def home():
-    return jsonify({
-        "success": True,
-        "message": "Free Fire Player Lookup",
-        "endpoints": {
-            "/info": "Get player info by UID",
-            "/lookup": "Lookup by JWT Token"
-        },
-        "owner": "@vaibhavff570",
-        "join": ["@vaibhavapix", "@vaibhavapisx"]
-    })
+def RtY(reg):
+    return Bmw(reg)
 
-@app.route("/info", methods=["GET"])
-def info():
-    uid = request.args.get("id") or request.args.get("uid")
-    region = (request.args.get("region") or "SG").upper()
+# ==================== PLAYER FETCH (SYNC) ====================
+def LoL(uid, unk, reg, ep):
+    payload = QwE(json.dumps({'a': uid, 'b': unk}), main_pb2.GetPlayerPersonalShow())
+    data_enc = BmwNoiNoiBmvYasYas(G, F, payload)
     
+    token_info = RtY(reg)
+    if not token_info:
+        return None
+    
+    token = token_info['token']
+    server = token_info.get('server', SERVER_URL)
+    
+    try:
+        res = requests.post(
+            server + ep,
+            data=data_enc,
+            headers={
+                'User-Agent': "Dalvik/2.1.0 (Linux; U; Android 13; CPH2095 Build/RKQ1.211119.001)",
+                'Connection': "Keep-Alive",
+                'Accept-Encoding': "gzip",
+                'Content-Type': "application/octet-stream",
+                'Expect': "100-continue",
+                'Authorization': token,
+                'X-Unity-Version': "2018.4.11f1",
+                'X-GA': "v1 1",
+                'ReleaseVersion': "OB54"
+            },
+            timeout=30
+        )
+        
+        if res.status_code == 200:
+            return json.loads(json_format.MessageToJson(PoI(res.content, AccountPersonalShow_pb2.AccountPersonalShowInfo)))
+        return None
+    except:
+        return None
+
+def HeHe(d):
+    return d
+
+# ==================== ROUTES (MIRIP ASLI) ====================
+@FAHHHH.route('/Bmw')
+def OMG():
+    uid = request.args.get('uid')
     if not uid:
         return jsonify({"error": "Please provide UID."}), 400
     
-    # Generate token
-    token = generate_token(region)
-    if not token:
-        return jsonify({"error": "Failed to generate token."}), 500
+    for reg in REGNS:
+        try:
+            data = LoL(uid, "7", reg, "/GetPlayerPersonalShow")
+            if data:
+                data = HeHe(data)
+                return json.dumps(data, indent=2, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        except:
+            continue
     
-    # Fetch player
-    data = fetch_player(uid, token)
-    if not data:
-        return jsonify({"error": "Player not found."}), 404
-    
-    return json.dumps(data, indent=2, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}
+    return jsonify({"error": "UID not found in any region."}), 404
 
-@app.route("/lookup", methods=["GET"])
-def lookup():
-    jwt_token = request.args.get("jwt") or request.args.get("token")
+@FAHHHH.route('/info')
+def info():
+    uid = request.args.get('id') or request.args.get('uid')
+    if not uid:
+        return jsonify({"error": "Please provide UID."}), 400
     
+    for reg in REGNS:
+        try:
+            data = LoL(uid, "7", reg, "/GetPlayerPersonalShow")
+            if data:
+                data = HeHe(data)
+                return json.dumps(data, indent=2, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}
+        except:
+            continue
+    
+    return jsonify({"error": "UID not found in any region."}), 404
+
+@FAHHHH.route('/lookup')
+def lookup():
+    jwt_token = request.args.get('jwt') or request.args.get('token')
     if not jwt_token:
         return jsonify({"error": "Please provide JWT token."}), 400
     
-    # Decode JWT untuk dapet UID
+    # Decode JWT
     import base64
     try:
         parts = jwt_token.split('.')
@@ -166,16 +199,52 @@ def lookup():
             uid = jwt_data.get("account_id")
             
             if uid:
-                data = fetch_player(str(uid), jwt_token)
-                if data:
-                    return json.dumps(data, indent=2, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}
+                for reg in REGNS:
+                    try:
+                        # Fetch dengan JWT langsung
+                        payload = QwE(json.dumps({'a': str(uid), 'b': '7'}), main_pb2.GetPlayerPersonalShow())
+                        data_enc = BmwNoiNoiBmvYasYas(G, F, payload)
+                        
+                        res = requests.post(
+                            f"{SERVER_URL}/GetPlayerPersonalShow",
+                            data=data_enc,
+                            headers={
+                                'User-Agent': "Dalvik/2.1.0",
+                                'Content-Type': "application/octet-stream",
+                                'Authorization': f"Bearer {jwt_token}",
+                                'X-Unity-Version': "2018.4.11f1",
+                                'X-GA': "v1 1",
+                                'ReleaseVersion': "OB54"
+                            },
+                            timeout=30
+                        )
+                        
+                        if res.status_code == 200:
+                            data = json.loads(json_format.MessageToJson(PoI(res.content, AccountPersonalShow_pb2.AccountPersonalShowInfo)))
+                            return json.dumps(data, indent=2, ensure_ascii=False), 200, {'Content-Type': 'application/json; charset=utf-8'}
+                    except:
+                        continue
     except:
         pass
     
     return jsonify({"error": "Invalid token or player not found."}), 404
 
+@FAHHHH.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "success": True,
+        "message": "Free Fire Player Lookup",
+        "owner": "@vaibhavff570",
+        "join": ["@vaibhavapix", "@vaibhavapisx"],
+        "endpoints": {
+            "/Bmw": "Get player by UID",
+            "/info": "Get player by UID (alternate)",
+            "/lookup": "Get player by JWT token"
+        }
+    })
+
 # ==================== MAIN ====================
 if __name__ == "__main__":
-    print("🔥 Free Fire API - Our Version")
+    print("🔥 Free Fire API - SG & ID Only")
     print("Owner: @vaibhavff570")
-    app.run(host="0.0.0.0", port=5000)
+    FAHHHH.run(host="0.0.0.0", port=5000)
