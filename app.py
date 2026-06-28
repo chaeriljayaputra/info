@@ -1,140 +1,17 @@
-# info.py - FIXED (Proto lengkap untuk Vercel)
+# info.py - VERCEL FINAL (Generate proto from .proto text)
 from flask import Flask, request, jsonify
 import requests
 import json
 import base64
 import re
 import os
+import sys
 from datetime import datetime
 from Crypto.Cipher import AES
 
 os.environ['PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION'] = 'python'
 
-from google.protobuf import descriptor_pool as _descriptor_pool
-from google.protobuf import runtime_version as _runtime_version
-from google.protobuf.internal import builder as _builder
-from google.protobuf.json_format import MessageToJson, ParseDict
-
 app = Flask(__name__)
-
-# ==================== PROTO FULL (TIDAK DIPOTONG) ====================
-_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 30, 0, '', 'FreeFire.proto')
-
-# FreeFire.proto - FULL LoginReq + LoginRes
-DESC_FF = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0e\x46reeFire.proto\"c\n\x08LoginReq\x12\x0f\n\x07open_id\x18\x16 \x01(\t\x12\x14\n\x0copen_id_type\x18\x17 \x01(\t\x12\x13\n\x0blogin_token\x18\x1d \x01(\t\x12\x1b\n\x13orign_platform_type\x18\x63 \x01(\t\"\xa0\x03\n\x08LoginRes\x12\x12\n\naccount_id\x18\x01 \x01(\x04\x12\x13\n\x0block_region\x18\x02 \x01(\t\x12\x13\n\x0bnoti_region\x18\x03 \x01(\t\x12\x11\n\tip_region\x18\x04 \x01(\t\x12\x19\n\x11\x61gora_environment\x18\x05 \x01(\t\x12\x19\n\x11new_active_region\x18\x06 \x01(\t\x12\x19\n\x11recommend_regions\x18\x07 \x03(\t\x12\r\n\x05token\x18\x08 \x01(\t\x12\x0b\n\x03ttl\x18\t \x01(\r\x12\x12\n\nserver_url\x18\n \x01(\t\x12\x16\n\x0e\x65mulator_score\x18\x0b \x01(\r\x12\x0e\n\x06tp_url\x18\x0e \x01(\t\x12\x15\n\rapp_server_id\x18\x0f \x01(\r\x12\x0f\n\x07\x61no_url\x18\x10 \x01(\t\x12\x0f\n\x07ip_city\x18\x11 \x01(\t\x12\x16\n\x0eip_subdivision\x18\x12 \x01(\t\x62\x06proto3'
-)
-
-_gf = {}
-_builder.BuildMessageAndEnumDescriptors(DESC_FF, _gf)
-_builder.BuildTopDescriptorsAndMessages(DESC_FF, 'FreeFire_pb2', _gf)
-LoginReq = _gf['LoginReq']
-LoginRes = _gf['LoginRes']
-
-# main.proto
-DESC_MAIN = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x0cmain.proto\"-\n\x15GetPlayerPersonalShow\x12\t\n\x01\x61\x18\x01 \x01(\x03\x12\t\n\x01\x62\x18\x02 \x01(\x05\x62\x06proto3'
-)
-_gm = {}
-_builder.BuildMessageAndEnumDescriptors(DESC_MAIN, _gm)
-_builder.BuildTopDescriptorsAndMessages(DESC_MAIN, 'main_pb2', _gm)
-GetPlayerPersonalShow = _gm['GetPlayerPersonalShow']
-
-# AccountPersonalShow.proto - COMPACT TAPI LENGKAP
-_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 33, 1, '', 'AccountPersonalShow.proto')
-
-# Build proto dari .proto TEXT (lebih aman)
-import tempfile
-proto_text = '''
-syntax = "proto3";
-package freefire;
-
-message AccountInfoBasic {
-  optional uint64 account_id = 1;
-  optional string nickname = 3;
-  optional string region = 5;
-  optional uint32 level = 6;
-  optional uint32 rank = 14;
-  optional uint32 liked = 21;
-  optional int64 last_login_at = 24;
-  optional uint32 cs_rank = 30;
-  optional int64 create_at = 44;
-  optional string clan_name = 13;
-}
-
-message AvatarProfile {
-  optional uint32 avatar_id = 1;
-  repeated uint32 clothes = 4;
-  repeated uint32 equiped_skills = 5;
-}
-
-message SocialBasicInfo {
-  optional string signature = 9;
-}
-
-message ClanInfoBasic {
-  optional string clan_name = 2;
-  optional uint32 clan_level = 4;
-}
-
-message DiamondCostRes {
-  optional uint32 diamond_cost = 1;
-}
-
-message CreditScoreInfoBasic {
-  optional uint32 credit_score = 1;
-}
-
-message AccountPersonalShowInfo {
-  optional AccountInfoBasic basic_info = 1;
-  optional AvatarProfile profile_info = 2;
-  optional ClanInfoBasic clan_basic_info = 6;
-  optional SocialBasicInfo social_info = 9;
-  optional DiamondCostRes diamond_cost_res = 10;
-  optional CreditScoreInfoBasic credit_score_info = 11;
-}
-'''
-
-# Tulis proto text ke file sementara
-tmp = tempfile.NamedTemporaryFile(suffix='.proto', delete=False, mode='w')
-tmp.write(proto_text)
-tmp.close()
-
-# Compile proto
-try:
-    from grpc_tools import protoc
-    protoc.main(['grpc_tools.protoc', f'--proto_path={os.path.dirname(tmp.name)}', f'--python_out={os.path.dirname(tmp.name)}', tmp.name])
-    
-    # Import compiled proto
-    import sys
-    sys.path.insert(0, os.path.dirname(tmp.name))
-    import AccountPersonalShow_pb2 as _aps
-    AccountPersonalShowInfo = _aps.AccountPersonalShowInfo
-except:
-    # Fallback: pakai serialized manual
-    APS_BYTES = bytes.fromhex('0a1934366163636f756e74506572736f6e616c53686f772e70726f746f12086672656566697265')
-    # Too complex, use simpler approach
-    
-    # Cara paling simpel: parse manual
-    def parse_player_response(data_bytes):
-        """Manual parse - cari nickname, level, dll dari binary"""
-        try:
-            text = data_bytes.decode('utf-8', errors='ignore')
-            result = {}
-            
-            # Cari nickname (string setelah pattern tertentu)
-            nick_match = re.search(r'nickname[\x00-\x1f]+([A-Za-z0-9_\x80-\xff]{2,30})', text)
-            if nick_match:
-                result['nickname'] = nick_match.group(1)
-            
-            # Cari level
-            lvl_match = re.search(r'level[\x00-\x1f]+(\d+)', text)
-            if lvl_match:
-                result['level'] = int(lvl_match.group(1))
-            
-            return result if result.get('nickname') else None
-        except:
-            return None
 
 # ==================== CONFIG ====================
 CREDENTIALS = {
@@ -152,49 +29,189 @@ def pad_data(d):
 def encrypt_data(d):
     return AES.new(G, AES.MODE_CBC, F).encrypt(pad_data(d))
 
-def parse_pb(d, mt):
-    m = mt(); m.ParseFromString(d); return m
-
-def json2pb(js, mt):
-    m = mt(); ParseDict(json.loads(js), m); return m.SerializeToString()
-
 def b64_decode(s):
     s += '=' * (4 - len(s) % 4) if len(s) % 4 else ''
     return json.loads(base64.b64decode(s))
 
-def decode_jwt(token):
-    try:
-        parts = token.split('.')
-        if len(parts) < 2: return None
-        p = parts[1]
-        p += '=' * (4 - len(p) % 4) if len(p) % 4 else ''
-        return json.loads(base64.b64decode(p))
-    except: return None
+# ==================== SIMPLE PROTOBUF BUILDER ====================
+# Build proto dari teks .proto langsung saat runtime
 
-def generate_token_sync(region):
+PROTO_TEXT = """
+syntax = "proto3";
+
+message LoginReq {
+  string open_id = 22;
+  string open_id_type = 23;
+  string login_token = 29;
+  string orign_platform_type = 99;
+}
+
+message LoginRes {
+  uint64 account_id = 1;
+  string lock_region = 2;
+  string noti_region = 3;
+  string ip_region = 4;
+  string token = 8;
+  uint32 ttl = 9;
+  string server_url = 10;
+  uint32 emulator_score = 11;
+}
+
+message GetPlayerPersonalShow {
+  int64 a = 1;
+  int32 b = 2;
+}
+"""
+
+def build_proto_from_text(proto_text, message_name):
+    """Build protobuf class from .proto text"""
+    from google.protobuf import descriptor_pb2
+    from google.protobuf import descriptor_pool
+    from google.protobuf import message_factory
+    import subprocess
+    import tempfile
+    
+    # Tulis ke file sementara
+    tmp_proto = tempfile.NamedTemporaryFile(suffix='.proto', delete=False, mode='w')
+    tmp_proto.write(proto_text)
+    tmp_proto.close()
+    
+    tmp_dir = os.path.dirname(tmp_proto.name)
+    
+    try:
+        # Compile proto
+        subprocess.run([
+            sys.executable, '-m', 'grpc_tools.protoc',
+            f'--proto_path={tmp_dir}',
+            f'--python_out={tmp_dir}',
+            tmp_proto.name
+        ], check=True, capture_output=True, timeout=30)
+        
+        # Import hasil compile
+        sys.path.insert(0, tmp_dir)
+        pb2_name = os.path.splitext(os.path.basename(tmp_proto.name))[0] + '_pb2'
+        module = __import__(pb2_name)
+        
+        # Cleanup
+        os.unlink(tmp_proto.name)
+        try: os.unlink(os.path.join(tmp_dir, pb2_name + '.py'))
+        except: pass
+        
+        return getattr(module, message_name)
+    except:
+        os.unlink(tmp_proto.name)
+        return None
+
+# ==================== FALLBACK: Manual protobuf ====================
+def make_varint(n):
+    """Encode varint manually"""
+    result = []
+    while n > 127:
+        result.append((n & 0x7F) | 0x80)
+        n >>= 7
+    result.append(n)
+    return bytes(result)
+
+def make_length_delimited(field_num, data):
+    """Tag + length + data"""
+    tag = make_varint((field_num << 3) | 2)
+    length = make_varint(len(data))
+    return tag + length + data
+
+def make_uint64(field_num, val):
+    return make_varint((field_num << 3) | 0) + make_varint(val)
+
+def make_int64(field_num, val):
+    return make_varint((field_num << 3) | 0) + make_varint(val)
+
+def make_string(field_num, s):
+    return make_length_delimited(field_num, s.encode())
+
+def build_login_req(open_id, token):
+    """Manual build LoginReq protobuf"""
+    body = b''
+    body += make_string(22, open_id)
+    body += make_string(23, '4')
+    body += make_string(29, token)
+    body += make_string(99, '4')
+    return body
+
+def build_player_show_req(uid):
+    """Manual build GetPlayerPersonalShow"""
+    body = b''
+    body += make_int64(1, int(uid))
+    body += make_varint((2 << 3) | 0) + make_varint(7)
+    return body
+
+def parse_login_res(data):
+    """Simple parser for LoginRes"""
+    try:
+        # Cari token di response
+        text = data.decode('latin-1')
+        token_match = re.search(r'token[\x00-\x1f]+([A-Za-z0-9_\-\.]{50,})', text)
+        if token_match:
+            return {'token': token_match.group(1)}
+        return {'token': '0'}
+    except:
+        return {'token': '0'}
+
+def parse_player_res(data):
+    """Parse player response"""
+    try:
+        text = data.decode('utf-8', errors='ignore')
+        result = {}
+        
+        # Cari nickname
+        nick_match = re.search(r'nickname[\x00-\x1f\x20]+([^\x00-\x1f]{2,30})', text)
+        if nick_match:
+            result['nickname'] = nick_match.group(1).strip()
+        
+        # Cari level
+        lvl_match = re.search(r'level[\x00-\x1f]+(\d+)', text)
+        if lvl_match:
+            result['level'] = int(lvl_match.group(1))
+        
+        # Cari region
+        reg_match = re.search(r'region[\x00-\x1f]+([A-Z]{2})', text)
+        if reg_match:
+            result['region'] = reg_match.group(1)
+        
+        return result if result.get('nickname') else None
+    except:
+        return None
+
+# ==================== FUNCTIONS ====================
+def generate_token(region):
     creds = CREDENTIALS.get(region, CREDENTIALS["SG"])
     try:
         data = creds + "&response_type=token&client_type=2&client_secret=2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3&client_id=100067"
         r = requests.post("https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant", data=data, headers={'Content-Type': "application/x-www-form-urlencoded"}, timeout=30)
-        d = r.json(); token, oid = d.get("access_token", "0"), d.get("open_id", "0")
+        d = r.json()
+        token, oid = d.get("access_token", "0"), d.get("open_id", "0")
         if token == "0": return None
         
-        pb = json2pb(json.dumps({"open_id": oid, "open_id_type": "4", "login_token": token, "orign_platform_type": "4"}), LoginReq)
-        r = requests.post("https://loginbp.ggpolarbear.com/MajorLogin", data=encrypt_data(pb), headers={'Content-Type': "application/octet-stream", 'X-Unity-Version': "2018.4.11f1", 'X-GA': "v1 1", 'ReleaseVersion': "OB54"}, timeout=30)
+        # Build LoginReq manual
+        pb = build_login_req(oid, token)
+        encrypted = encrypt_data(pb)
+        
+        r = requests.post("https://loginbp.ggpolarbear.com/MajorLogin", data=encrypted, headers={'Content-Type': "application/octet-stream", 'X-Unity-Version': "2018.4.11f1", 'X-GA': "v1 1", 'ReleaseVersion': "OB54"}, timeout=30)
         if r.status_code == 200:
-            msg = json.loads(MessageToJson(parse_pb(r.content, LoginRes)))
+            msg = parse_login_res(r.content)
             return f"Bearer {msg.get('token', '0')}"
         return None
-    except: return None
+    except Exception as e:
+        print(f"Token error: {e}")
+        return None
 
-def fetch_player_sync(uid, token, region="SG"):
+def fetch_player(uid, token, region="SG"):
     try:
         server_url = SERVERS.get(region, SERVERS["SG"])
-        pb = json2pb(json.dumps({'a': str(uid), 'b': '7'}), GetPlayerPersonalShow)
+        pb = build_player_show_req(uid)
+        encrypted = encrypt_data(pb)
         
         r = requests.post(
             f"{server_url}/GetPlayerPersonalShow",
-            data=encrypt_data(pb),
+            data=encrypted,
             headers={
                 'Content-Type': "application/octet-stream",
                 'Authorization': token if token.startswith("Bearer ") else f"Bearer {token}",
@@ -204,50 +221,60 @@ def fetch_player_sync(uid, token, region="SG"):
         )
         if r.status_code != 200: return None
         
-        # Manual parse
-        data = parse_player_response(r.content) if 'parse_player_response' in dir() else None
-        
-        if not data:
-            return {'nickname': 'Unknown', 'level': 0, 'uid': uid}
+        data = parse_player_res(r.content)
+        if not data: return None
         
         return {
-            'uid': uid,
-            'nickname': data.get('nickname', '?'),
-            'level': data.get('level', 0),
-            'region': region,
+            'uid': uid, 'nickname': data.get('nickname', '?'),
+            'level': data.get('level', 0), 'region': data.get('region', region),
             'br_rank': 0, 'cs_rank': 0, 'liked': 0,
             'clan': '', 'clan_level': 0,
             'avatar': '', 'clothes': [], 'skills': 0,
             'signature': '', 'diamond': 0, 'credit': 0,
             'created': '', 'last_login': ''
         }
-    except: return None
+    except Exception as e:
+        print(f"Fetch error: {e}")
+        return None
 
+# ==================== ROUTES ====================
 @app.route("/", methods=["GET"])
 def home():
-    return jsonify({"success": True})
+    return jsonify({"success": True, "message": "Free Fire API", "endpoints": {"/info": "?id=UID&region=SG", "/lookup": "?jwt=TOKEN"}})
 
 @app.route("/info", methods=["GET"])
 def info():
-    try:
-        uid = request.args.get("id") or request.args.get("uid")
-        region = (request.args.get("region") or "SG").upper()
-        
-        if not uid:
-            return jsonify({"success": False, "error": "Missing id"}), 400
-        if region not in SERVERS: region = "SG"
-        
-        token = generate_token_sync(region)
-        if not token:
-            return jsonify({"success": False, "error": "Token failed"}), 500
-        
-        data = fetch_player_sync(uid, token, region)
-        if not data:
-            return jsonify({"success": False, "error": "Not found"}), 404
-        
-        return jsonify({"success": True, "data": data})
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+    uid = request.args.get("id") or request.args.get("uid")
+    region = (request.args.get("region") or "SG").upper()
+    
+    if not uid: return jsonify({"success": False, "error": "Missing id"}), 400
+    if region not in SERVERS: region = "SG"
+    
+    token = generate_token(region)
+    if not token: return jsonify({"success": False, "error": "Token failed"}), 500
+    
+    data = fetch_player(uid, token, region)
+    if not data: return jsonify({"success": False, "error": "Not found"}), 404
+    
+    return jsonify({"success": True, "data": data})
+
+@app.route("/lookup", methods=["GET"])
+def lookup():
+    jwt_token = request.args.get("jwt")
+    region = (request.args.get("region") or "SG").upper()
+    
+    if not jwt_token: return jsonify({"success": False, "error": "Missing jwt"}), 400
+    
+    jwt_data = b64_decode(jwt_token) if jwt_token.count('.') >= 2 else None
+    if not jwt_data: return jsonify({"success": False, "error": "Invalid JWT"}), 400
+    
+    uid = jwt_data.get("account_id")
+    if not uid: return jsonify({"success": False, "error": "No account_id"}), 400
+    
+    data = fetch_player(str(uid), jwt_token, region)
+    if not data: return jsonify({"success": False, "error": "Not found"}), 404
+    
+    return jsonify({"success": True, "data": data})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
