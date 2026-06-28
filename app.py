@@ -1,497 +1,238 @@
-import warnings
-warnings.filterwarnings('ignore')
-
-import requests
-import random
-import string
-import time
-import json
-import codecs
-import base64
-from datetime import datetime
+# info.py - VERCEL READY (Sync, Flask, All Endpoints)
 from flask import Flask, request, jsonify
+import requests
+import json
+import base64
+import re
+from datetime import datetime
+from Crypto.Cipher import AES
+from google.protobuf import descriptor_pool as _descriptor_pool
+from google.protobuf import runtime_version as _runtime_version
+from google.protobuf.internal import builder as _builder
+from google.protobuf.json_format import MessageToJson, ParseDict
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 
-# ============ KONFIGURASI TELEGRAM ============
+# ==================== EMBED PROTOBUF ====================
+_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 30, 0, '', 'FreeFire.proto')
+DESC_FF = _descriptor_pool.Default().AddSerializedFile(b'\n\x0e\x46reeFire.proto\"c\n\x08LoginReq\x12\x0f\n\x07open_id\x18\x16 \x01(\t\x12\x14\n\x0copen_id_type\x18\x17 \x01(\t\x12\x13\n\x0blogin_token\x18\x1d \x01(\t\x12\x1b\n\x13orign_platform_type\x18\x63 \x01(\t\"]\n\x10\x42lacklistInfoRes\x12\x1e\n\nban_reason\x18\x01 \x01(\x0e\x32\n.BanReason\x12\x17\n\x0f\x65xpire_duration\x18\x02 \x01(\r\x12\x10\n\x08\x62\x61n_time\x18\x03 \x01(\r\"f\n\x0eLoginQueueInfo\x12\r\n\x05\x61llow\x18\x01 \x01(\x08\x12\x16\n\x0equeue_position\x18\x02 \x01(\r\x12\x16\n\x0eneed_wait_secs\x18\x03 \x01(\r\x12\x15\n\rqueue_is_full\x18\x04 \x01(\x08\"\xa0\x03\n\x08LoginRes\x12\x12\n\naccount_id\x18\x01 \x01(\x04\x12\x13\n\x0block_region\x18\x02 \x01(\t\x12\x13\n\x0bnoti_region\x18\x03 \x01(\t\x12\x11\n\tip_region\x18\x04 \x01(\t\x12\x19\n\x11\x61gora_environment\x18\x05 \x01(\t\x12\x19\n\x11new_active_region\x18\x06 \x01(\t\x12\x19\n\x11recommend_regions\x18\x07 \x03(\t\x12\r\n\x05token\x18\x08 \x01(\t\x12\x0b\n\x03ttl\x18\t \x01(\r\x12\x12\n\nserver_url\x18\n \x01(\t\x12\x16\n\x0e\x65mulator_score\x18\x0b \x01(\r\x12$\n\tblacklist\x18\x0c \x01(\x0b\x32\x11.BlacklistInfoRes\x12#\n\nqueue_info\x18\r \x01(\x0b\x32\x0f.LoginQueueInfo\x12\x0e\n\x06tp_url\x18\x0e \x01(\t\x12\x15\n\rapp_server_id\x18\x0f \x01(\r\x12\x0f\n\x07\x61no_url\x18\x10 \x01(\t\x12\x0f\n\x07ip_city\x18\x11 \x01(\t\x12\x16\n\x0eip_subdivision\x18\x12 \x01(\t*\xa8\x01\n\tBanReason\x12\x16\n\x12\x42\x41N_REASON_UNKNOWN\x10\x00\x12\x1b\n\x17\x42\x41N_REASON_IN_GAME_AUTO\x10\x01\x12\x15\n\x11\x42\x41N_REASON_REFUND\x10\x02\x12\x15\n\x11\x42\x41N_REASON_OTHERS\x10\x03\x12\x16\n\x12\x42\x41N_REASON_SKINMOD\x10\x04\x12 \n\x1b\x42\x41N_REASON_IN_GAME_AUTO_NEW\x10\xf6\x07\x62\x06proto3')
+_gf = {}
+_builder.BuildMessageAndEnumDescriptors(DESC_FF, _gf)
+_builder.BuildTopDescriptorsAndMessages(DESC_FF, 'FreeFire_pb2', _gf)
+LoginReq = _gf['LoginReq']
+LoginRes = _gf['LoginRes']
+
+MAIN_DESC = _descriptor_pool.Default().AddSerializedFile(b'\n\x0csample.proto\"*\n\x12SearchWorkshopCode\x12\t\n\x01\x61\x18\x01 \x01(\t\x12\t\n\x01\x62\x18\x02 \x01(\x05\"-\n\x15GetPlayerPersonalShow\x12\t\n\x01\x61\x18\x01 \x01(\x03\x12\t\n\x01\x62\x18\x02 \x01(\x05\x62\x06proto3')
+_gm = {}
+_builder.BuildMessageAndEnumDescriptors(MAIN_DESC, _gm)
+_builder.BuildTopDescriptorsAndMessages(MAIN_DESC, 'main_pb2', _gm)
+GetPlayerPersonalShow = _gm['GetPlayerPersonalShow']
+
+_runtime_version.ValidateProtobufRuntimeVersion(_runtime_version.Domain.PUBLIC, 6, 33, 1, '', 'AccountPersonalShow.proto')
+APS_DESC = _descriptor_pool.Default().AddSerializedFile(b'\n\x19\x41\x63\x63ountPersonalShow.proto\x12\x08\x66reefire\"\xac\x17\n\x10\x41\x63\x63ountInfoBasic\x12\x17\n\naccount_id\x18\x01 \x01(\x04H\x00\x88\x01\x01\x12\x15\n\x08nickname\x18\x03 \x01(\tH\x02\x88\x01\x01\x12\x13\n\x06region\x18\x05 \x01(\tH\x04\x88\x01\x01\x12\x12\n\x05level\x18\x06 \x01(\rH\x05\x88\x01\x01\x12\x11\n\x04rank\x18\x0e \x01(\rH\r\x88\x01\x01\x12\x12\n\x05liked\x18\x15 \x01(\rH\x14\x88\x01\x01\x12\x1a\n\rlast_login_at\x18\x18 \x01(\x03H\x17\x88\x01\x01\x12\x14\n\x07\x63s_rank\x18\x1e \x01(\rH\x1d\x88\x01\x01\x12\x16\n\tcreate_at\x18, \x01(\x03H*\x88\x01\x01\x12\x16\n\tclan_name\x18\r \x01(\tH\x0c\x88\x01\x01\"\x98\x05\n\rAvatarProfile\x12\x16\n\tavatar_id\x18\x01 \x01(\rH\x00\x88\x01\x01\x12\x0f\n\x07\x63lothes\x18\x04 \x03(\r\x12\x16\n\x0e\x65quiped_skills\x18\x05 \x03(\r\"\xd5\x05\n\x0fSocialBasicInfo\x12\x16\n\tsignature\x18\t \x01(\tH\x06\x88\x01\x01\"\x9d\x02\n\rClanInfoBasic\x12\x16\n\tclan_name\x18\x02 \x01(\tH\x01\x88\x01\x01\x12\x17\n\nclan_level\x18\x04 \x01(\rH\x03\x88\x01\x01\"<\n\x0e\x44iamondCostRes\x12\x19\n\x0c\x64iamond_cost\x18\x01 \x01(\rH\x00\x88\x01\x01\"\xfd\x03\n\x14\x43reditScoreInfoBasic\x12\x19\n\x0c\x63redit_score\x18\x01 \x01(\rH\x00\x88\x01\x01\"\xfa\x06\n\x17\x41\x63\x63ountPersonalShowInfo\x12\x33\n\nbasic_info\x18\x01 \x01(\x0b\x32\x1a.freefire.AccountInfoBasicH\x00\x88\x01\x01\x12\x32\n\x0cprofile_info\x18\x02 \x01(\x0b\x32\x17.freefire.AvatarProfileH\x01\x88\x01\x01\x12\x35\n\x0f\x63lan_basic_info\x18\x06 \x01(\x0b\x32\x17.freefire.ClanInfoBasicH\x03\x88\x01\x01\x12\x33\n\x0bsocial_info\x18\t \x01(\x0b\x32\x19.freefire.SocialBasicInfoH\x06\x88\x01\x01\x12\x37\n\x10\x64iamond_cost_res\x18\n \x01(\x0b\x32\x18.freefire.DiamondCostResH\x07\x88\x01\x01\x12>\n\x11\x63redit_score_info\x18\x0b \x01(\x0b\x32\x1e.freefire.CreditScoreInfoBasicH\x08\x88\x01\x01\x62\x06proto3')
+_ga = {}
+_builder.BuildMessageAndEnumDescriptors(APS_DESC, _ga)
+_builder.BuildTopDescriptorsAndMessages(APS_DESC, 'AccountPersonalShow_pb2', _ga)
+AccountPersonalShowInfo = _ga['AccountPersonalShowInfo']
+
+# ==================== CONFIG ====================
+CREDENTIALS = {
+    "SG": "uid=5374557838&password=ANONFK345213AKU",
+    "ID": "uid=5374558199&password=ANONFK54734ULRW",
+}
+SERVERS = {"SG": "https://clientbp.ggpolarbear.com", "ID": "https://clientbp.ggpolarbear.com"}
+G = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
+F = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
 BOT_TOKEN = "8965307683:AAGXwuIge4QKuYXtrkXhG4AahxDrynqi7SY"
 OWNER_ID = 8660700322
-CHANNEL_PROMO = "@dindingijo"
-CONTACT = "@ricaricahamstee"
-WATERMARK = f"CH TELE {CHANNEL_PROMO} Join pls"
 
-# ============ KONFIGURASI API KEYS ============
-API_KEYS = {
-    "FREE_KEY_001": {"limit": 50, "used": 0, "last_reset_day": 0},
-    "VIP_KEY_001": {"limit": 500, "used": 0, "last_reset_day": 0},
-    "UNLIMITED_001": {"limit": 999999, "used": 0, "last_reset_day": 0}
-}
+# ==================== HELPERS (SYNC) ====================
+def pad_data(d):
+    l = AES.block_size - (len(d) % AES.block_size)
+    return d + bytes([l] * l)
 
-# ============ KONFIGURASI GENERATOR ============
-REGION_CHOICE = 1
+def encrypt_data(d):
+    return AES.new(G, AES.MODE_CBC, F).encrypt(pad_data(d))
 
-REGION_MAP = {
-    1: {"code": "ID", "name": "INDONESIA", "lang": "id"},
-    2: {"code": "ME", "name": "MIDDLE EAST", "lang": "ar"},
-    3: {"code": "IND", "name": "INDIA", "lang": "hi"},
-    4: {"code": "TH", "name": "THAILAND", "lang": "th"},
-    5: {"code": "VN", "name": "VIETNAM", "lang": "vi"},
-    6: {"code": "BD", "name": "BANGLADESH", "lang": "bn"},
-    7: {"code": "PK", "name": "PAKISTAN", "lang": "ur"},
-    8: {"code": "TW", "name": "TAIWAN", "lang": "zh"},
-    9: {"code": "CIS", "name": "RUSSIA", "lang": "ru"},
-    10: {"code": "SAC", "name": "SPAIN", "lang": "es"},
-    11: {"code": "BR", "name": "BRAZIL", "lang": "pt"}
-}
+def parse_pb(d, mt):
+    m = mt(); m.ParseFromString(d); return m
 
-SELECTED = REGION_MAP.get(REGION_CHOICE, REGION_MAP[1])
-REGION = SELECTED["code"]
-REGION_NAME = SELECTED["name"]
+def json2pb(js, mt):
+    m = mt(); ParseDict(json.loads(js), m); return m.SerializeToString()
 
-NAME_PREFIX = "shuoi-"
-PASS_PREFIX = "shu"
-HEX_KEY = bytes.fromhex("32656534343831396539623435393838343531343130363762323831363231383734643064356437616639643866376530306331653534373135623764316533")
+def b64_decode(s):
+    s += '=' * (4 - len(s) % 4) if len(s) % 4 else ''
+    return json.loads(base64.b64decode(s))
 
-# ============ DEVICE POOL ============
-DEVICE_POOL = []
-samsung = [f"SM-{c}{random.randint(100,999)}" for _ in range(100) for c in "AGNFMSJE"]
-xiaomi = [f"{p} {random.randint(7,14)}" for _ in range(80) for p in ["Redmi Note", "Redmi", "Poco F", "Poco X", "Mi", "Xiaomi"]]
-oppo = [f"OPPO {m}{random.randint(2,9999)}" for _ in range(60) for m in ["CPH", "Find X", "Reno", "A", "F"]]
-vivo = [f"vivo {m}{random.randint(1,9999)}" for _ in range(60) for m in ["V", "X", "Y", "T", "S"]]
-realme = [f"Realme {m}{random.randint(7,70)}" for _ in range(50) for m in ["", " Pro", " GT ", " C", " Narzo "]]
-oneplus = [f"OnePlus {random.randint(8,14)}" for _ in range(40)]
-moto = [f"Moto {m}{random.randint(10,100)}" for _ in range(40) for m in ["G", "E", "Edge "]]
-other = ["ASUS_I005DA","ASUS Zenfone 8","Google Pixel 6","Sony Xperia 1 III"] * 20
-all_models = samsung + xiaomi + oppo + vivo + realme + oneplus + moto + other
-brands = ["samsung","xiaomi","oppo","vivo","realme","oneplus","motorola","asus","google","sony"]
-android_versions = ["9","10","11","12","13","14","15"]
-
-for _ in range(2000):
-    DEVICE_POOL.append({
-        "model": random.choice(all_models),
-        "brand": random.choice(brands),
-        "android": random.choice(android_versions)
-    })
-
-# ============ TELEGRAM FUNCTION ============
-def send_to_owner(account_id, uid, password, region_name, api_key, caller_ip):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    message = f"""🔥 <b>NEW ACCOUNT GENERATED VIA API</b> 🔥
-
-🆔 Account ID: <code>{account_id}</code>
-📝 UID: <code>{uid}</code>
-🔑 <b>PASSWORD: <code>{password}</code></b>
-🌍 Region: {region_name}
-🔑 API Key: <code>{api_key}</code>
-📞 IP Caller: {caller_ip}
-⏰ Time: {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}
-
-💡 Join: {CHANNEL_PROMO}"""
-    
-    payload = {
-        "chat_id": OWNER_ID,
-        "text": message,
-        "parse_mode": "HTML"
-    }
+def decode_jwt(token):
     try:
-        requests.post(url, json=payload, timeout=10)
-    except:
-        pass
+        parts = token.split('.')
+        if len(parts) < 2: return None
+        p = parts[1]
+        p += '=' * (4 - len(p) % 4) if len(p) % 4 else ''
+        return json.loads(base64.b64decode(p))
+    except: return None
 
-# ============ GENERATOR FUNCTIONS ============
-def get_random_ip():
-    return f"{random.randint(1,255)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,255)}"
-
-def get_headers():
-    device = random.choice(DEVICE_POOL)
-    return {
-        "User-Agent": f"GarenaMSDK/4.0.39({device['model']};Android {device['android']};en;ID;)",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "Accept-Encoding": "gzip",
-        "Connection": "Keep-Alive",
-        "X-Unity-Version": "2018.4.11f1",
-        "X-GA": f"v1 {random.randint(100000, 999999)}",
-        "X-Forwarded-For": get_random_ip(),
-        "X-Real-IP": get_random_ip(),
-    }
-
-def get_headers_form():
-    h = get_headers()
-    h["Content-Type"] = "application/x-www-form-urlencoded"
-    return h
-
-def encode_varint(n):
-    if n < 0: return b''
-    result = []
-    while True:
-        byte = n & 0x7F
-        n >>= 7
-        if n: byte |= 0x80
-        result.append(byte)
-        if not n: break
-    return bytes(result)
-
-def create_proto_field(field_num, value):
-    if isinstance(value, dict):
-        nested = b''
-        for k, v in value.items():
-            nested += create_proto_field(k, v)
-        header = (field_num << 3) | 2
-        return encode_varint(header) + encode_varint(len(nested)) + nested
-    elif isinstance(value, int):
-        header = (field_num << 3) | 0
-        return encode_varint(header) + encode_varint(value)
-    elif isinstance(value, (str, bytes)):
-        encoded_val = value.encode() if isinstance(value, str) else value
-        header = (field_num << 3) | 2
-        return encode_varint(header) + encode_varint(len(encoded_val)) + encoded_val
-    return b''
-
-def build_proto(fields):
-    return b''.join(create_proto_field(k, v) for k, v in fields.items())
-
-def aes_encrypt(hex_data):
-    from Crypto.Cipher import AES
-    from Crypto.Util.Padding import pad
-    data = bytes.fromhex(hex_data)
-    aes_key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-    iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-    cipher = AES.new(aes_key, AES.MODE_CBC, iv)
-    return cipher.encrypt(pad(data, AES.block_size))
-
-def encrypt_api(plain_hex):
-    from Crypto.Cipher import AES
-    from Crypto.Util.Padding import pad
-    plain = bytes.fromhex(plain_hex)
-    aes_key = bytes([89, 103, 38, 116, 99, 37, 68, 69, 117, 104, 54, 37, 90, 99, 94, 56])
-    iv = bytes([54, 111, 121, 90, 68, 114, 50, 50, 69, 51, 121, 99, 104, 106, 77, 37])
-    cipher = AES.new(aes_key, AES.MODE_CBC, iv)
-    return cipher.encrypt(pad(plain, AES.block_size)).hex()
-
-def generate_cool_name():
-    base = f"{NAME_PREFIX}{random.randint(10, 999)}"
-    syms = ['~','!','@','#','$','%','^','&','*','-','_','+','=']
-    p = random.randint(1, 3)
-    if p == 1:
-        s = random.choice(syms)
-        return f"{s}{base}{s}"
-    elif p == 2:
-        s1, s2 = random.sample(syms, 2)
-        return f"{s1}{s2}{base}"
-    else:
-        return base
-
-def major_login(uid, password, access_token, open_id, region):
+# ==================== TOKEN GENERATOR (SYNC) ====================
+def generate_token_sync(region):
+    creds = CREDENTIALS.get(region, CREDENTIALS["SG"])
     try:
-        lang = "id" if region == "ID" else "en"
-        payload_parts = [
-            b'\x1a\x132025-08-30 05:19:21"\tfree fire(\x01:\x081.114.13B2Android OS 9 / API-28 (PI/rel.cjw.20220518.114133)J\x08HandheldR\nATM MobilsZ\x04WIFI`\xb6\nh\xee\x05r\x03300z\x1fARMv7 VFPv3 NEON VMH | 2400 | 2\x80\x01\xc9\x0f\x8a\x01\x0fAdreno (TM) 640\x92\x01\rOpenGL ES 3.2\x9a\x01+Google|dfa4ab4b-9dc4-454e-8065-e70c733fa53f\xa2\x01\x0e105.235.139.91\xaa\x01\x02',
-            lang.encode("ascii"),
-            b'\xb2\x01 1d8ec0240ede109973f3321b9354b44d\xba\x01\x014\xc2\x01\x08Handheld\xca\x01\x10Asus ASUS_I005DA\xea\x01@afcfbf13334be42036e4f742c80b956344bed760ac91b3aff9b607a610ab4390\xf0\x01\x01\xca\x02\nATM Mobils\xd2\x02\x04WIFI\xca\x03 7428b253defc164018c604a1ebbfebdf\xe0\x03\xa8\x81\x02\xe8\x03\xf6\xe5\x01\xf0\x03\xaf\x13\xf8\x03\x84\x07\x80\x04\xe7\xf0\x01\x88\x04\xa8\x81\x02\x90\x04\xe7\xf0\x01\x98\x04\xa8\x81\x02\xc8\x04\x01\xd2\x04=/data/app/com.dts.freefireth-PdeDnOilCSFn37p1AH_FLg==/lib/arm\xe0\x04\x01\xea\x04_2087f61c19f57f2af4e7feff0b24d9d9|/data/app/com.dts.freefireth-PdeDnOilCSFn37p1AH_FLg==/base.apk\xf0\x04\x03\xf8\x04\x01\x8a\x05\x0232\x9a\x05\n2019118692\xb2\x05\tOpenGLES2\xb8\x05\xff\x7f\xc0\x05\x04\xe0\x05\xf3F\xea\x05\x07android\xf2\x05pKqsHT5ZLWrYljNb5Vqh//yFRlaPHSO9NWSQsVvOmdhEEn7W+VHNUK+Q+fduA3ptNrGB0Ll0LRz3WW0jOwesLj6aiU7sZ40p8BfUE/FI/jzSTwRe2\xf8\x05\xfb\xe4\x06\x88\x06\x01\x90\x06\x01\x9a\x06\x014\xa2\x06\x014\xb2\x06"GQ@O\x00\x0e^\x00D\x06UA\x0ePM\r\x13hZ\x07T\x06\x0cm\\V\x0ejYV;\x0bU5'
-        ]
-        payload = b''.join(payload_parts)
+        data = creds + "&response_type=token&client_type=2&client_secret=2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3&client_id=100067"
+        r = requests.post("https://ffmconnect.live.gop.garenanow.com/oauth/guest/token/grant", data=data, headers={'Content-Type': "application/x-www-form-urlencoded"}, timeout=30, verify=False)
+        d = r.json(); token, oid = d.get("access_token", "0"), d.get("open_id", "0")
+        if token == "0": return None
         
-        if region in ["ME", "TH"]:
-            url = "https://loginbp.common.ggbluefox.com/MajorLogin"
-        else:
-            url = "https://loginbp.ggblueshark.com/MajorLogin"
+        pb = json2pb(json.dumps({"open_id": oid, "open_id_type": "4", "login_token": token, "orign_platform_type": "4"}), LoginReq)
+        r = requests.post("https://loginbp.ggpolarbear.com/MajorLogin", data=encrypt_data(pb), headers={'Content-Type': "application/octet-stream", 'X-Unity-Version': "2018.4.11f1", 'X-GA': "v1 1", 'ReleaseVersion': "OB54"}, timeout=30, verify=False)
+        if r.status_code == 200:
+            msg = json.loads(MessageToJson(parse_pb(r.content, LoginRes)))
+            return f"Bearer {msg.get('token', '0')}"
+        return None
+    except: return None
+
+# ==================== PLAYER FETCH (SYNC) ====================
+def fetch_player_sync(uid, token, region="SG"):
+    try:
+        server_url = SERVERS.get(region, SERVERS["SG"])
+        pb = json2pb(json.dumps({'a': str(uid), 'b': '7'}), GetPlayerPersonalShow)
         
-        headers = {
-            "Accept-Encoding": "gzip", "Authorization": "Bearer", "Connection": "Keep-Alive",
-            "Content-Type": "application/x-www-form-urlencoded", "Expect": "100-continue",
-            "Host": "loginbp.ggblueshark.com" if region not in ["ME","TH"] else "loginbp.common.ggbluefox.com",
-            "ReleaseVersion": "OB53", "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_I005DA Build/PI)",
-            "X-GA": "v1 1", "X-Unity-Version": "2018.4.11f1"
+        r = requests.post(
+            f"{server_url}/GetPlayerPersonalShow",
+            data=encrypt_data(pb),
+            headers={
+                'Content-Type': "application/octet-stream",
+                'Authorization': token if token.startswith("Bearer ") else f"Bearer {token}",
+                'X-Unity-Version': "2018.4.11f1", 'X-GA': "v1 1", 'ReleaseVersion': "OB54"
+            },
+            timeout=30, verify=False
+        )
+        if r.status_code != 200: return None
+        
+        data = json.loads(MessageToJson(parse_pb(r.content, AccountPersonalShowInfo)))
+        basic = data.get('basicInfo', {})
+        if not basic.get('nickname'): return None
+        
+        profile = data.get('profileInfo', {}); social = data.get('socialInfo', {}); clan = data.get('clanBasicInfo', {})
+        return {
+            'uid': uid, 'nickname': basic.get('nickname', '?'), 'level': basic.get('level', 0),
+            'region': basic.get('region', region), 'br_rank': basic.get('rank', 0),
+            'cs_rank': basic.get('csRank', 0), 'liked': basic.get('liked', 0),
+            'clan': clan.get('clanName', ''), 'clan_level': clan.get('clanLevel', 0),
+            'avatar': profile.get('avatarId', ''), 'clothes': profile.get('clothes', []),
+            'skills': len(profile.get('equipedSkills', [])), 'signature': social.get('signature', ''),
+            'diamond': data.get('diamondCostRes', {}).get('diamondCost', 0),
+            'credit': data.get('creditScoreInfo', {}).get('creditScore', 100),
+            'created': basic.get('createAt', ''), 'last_login': basic.get('lastLoginAt', ''),
         }
-        
-        data = payload.replace(b'afcfbf13334be42036e4f742c80b956344bed760ac91b3aff9b607a610ab4390', access_token.encode())
-        data = data.replace(b'1d8ec0240ede109973f3321b9354b44d', open_id.encode())
-        d = encrypt_api(data.hex())
-        
-        session = requests.Session()
-        session.verify = False
-        response = session.post(url, headers=headers, data=bytes.fromhex(d), timeout=15)
-        
-        if response.status_code == 200 and len(response.text) > 10:
-            jwt_start = response.text.find("eyJ")
-            if jwt_start != -1:
-                jwt_token = response.text[jwt_start:]
-                second_dot = jwt_token.find(".", jwt_token.find(".") + 1)
-                if second_dot != -1:
-                    jwt_token = jwt_token[:second_dot + 44]
-                try:
-                    parts = jwt_token.split('.')
-                    if len(parts) >= 2:
-                        payload_part = parts[1]
-                        padding = 4 - len(payload_part) % 4
-                        if padding != 4: 
-                            payload_part += '=' * padding
-                        decoded = base64.urlsafe_b64decode(payload_part)
-                        data = json.loads(decoded)
-                        account_id = data.get('account_id') or data.get('external_id')
-                        if account_id:
-                            return {"account_id": str(account_id), "jwt_token": jwt_token}
-                except:
-                    pass
-        return {"account_id": "N/A", "jwt_token": ""}
-    except:
-        return {"account_id": "N/A", "jwt_token": ""}
+    except: return None
 
-def generate_one_account():
-    session = requests.Session()
-    session.verify = False
-    
-    for retry in range(2):
-        try:
-            password = f"{PASS_PREFIX}{''.join(random.choices(string.ascii_uppercase + string.digits, k=6))}"
-            name = generate_cool_name()
-            
-            resp = session.post(
-                "https://100067.connect.garena.com/api/v2/oauth/guest:register",
-                headers=get_headers(),
-                json={"app_id": 100067, "client_type": 2, "password": password, "source": 2},
-                timeout=15
-            )
-            
-            if resp.status_code == 200:
-                data = resp.json()
-                if "data" in data and "uid" in data["data"]:
-                    uid = data["data"]["uid"]
-                    
-                    time.sleep(0.03)
-                    
-                    resp2 = session.post(
-                        "https://100067.connect.garena.com/oauth/guest/token/grant",
-                        headers=get_headers_form(),
-                        data={"uid": uid, "password": password, "response_type": "token", "client_type": "2", "client_secret": HEX_KEY, "client_id": "100067"},
-                        timeout=15
-                    )
-                    
-                    if resp2.status_code == 200:
-                        token_data = resp2.json()
-                        open_id = token_data.get('open_id', '')
-                        access_token = token_data.get('access_token', '')
-                        
-                        if open_id and access_token:
-                            keystream = [0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30,0x31,0x37,0x30,0x30,0x30,0x30,0x30,0x32,0x30]
-                            encoded = ""
-                            for i in range(len(open_id)):
-                                encoded += chr(ord(open_id[i]) ^ keystream[i % len(keystream)])
-                            hex_str = ''.join(c if 32 <= ord(c) <= 126 else '\\u{:04x}'.format(ord(c)) for c in encoded)
-                            field = codecs.decode(hex_str, 'unicode_escape').encode('latin1')
-                            
-                            if REGION in ["ME", "TH"]:
-                                url_major = "https://loginbp.common.ggbluefox.com/MajorRegister"
-                            else:
-                                url_major = "https://loginbp.ggblueshark.com/MajorRegister"
-                            
-                            lang_code = "id" if REGION == "ID" else "en"
-                            payload = {1: name, 2: access_token, 3: open_id, 5: 102000007, 6: 4, 7: 1, 13: 1, 14: field, 15: lang_code, 16: 1, 17: 1}
-                            payload_bytes = build_proto(payload)
-                            encrypted_payload = aes_encrypt(payload_bytes.hex())
-                            
-                            headers_major = {
-                                "Accept-Encoding": "gzip", "Authorization": "Bearer", "Connection": "Keep-Alive",
-                                "Content-Type": "application/x-www-form-urlencoded", "Expect": "100-continue",
-                                "Host": "loginbp.ggblueshark.com" if REGION not in ["ME","TH"] else "loginbp.common.ggbluefox.com",
-                                "ReleaseVersion": "OB53", "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; ASUS_I005DA Build/PI)",
-                                "X-GA": "v1 1", "X-Unity-Version": "2018.4.11f1"
-                            }
-                            
-                            session.post(url_major, headers=headers_major, data=encrypted_payload, timeout=15)
-                            
-                            time.sleep(0.03)
-                            
-                            login_result = major_login(uid, password, access_token, open_id, REGION)
-                            account_id = login_result.get("account_id", "N/A")
-                            
-                            if account_id != "N/A":
-                                return {
-                                    "account_id": account_id,
-                                    "uid": uid,
-                                    "password": password,
-                                    "region": REGION_NAME,
-                                    "region_code": REGION
-                                }
-        except:
-            pass
-        
-        time.sleep(0.5)
-    
-    return None
+# ==================== TELEGRAM ====================
+def send_to_telegram(uid, text):
+    try:
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        r = requests.post(url, data={'chat_id': OWNER_ID, 'text': text[:4000]}, timeout=10)
+        return r.status_code == 200
+    except: return False
 
-# ============ API KEY FUNCTIONS ============
-def check_api_key(api_key):
-    current_day = datetime.now().day
-    
-    if api_key not in API_KEYS:
-        return False, "Invalid API key", None
-    
-    key_data = API_KEYS[api_key]
-    
-    if key_data.get("last_reset_day", 0) != current_day:
-        key_data["used"] = 0
-        key_data["last_reset_day"] = current_day
-    
-    if key_data["used"] >= key_data["limit"]:
-        return False, f"Daily limit reached! Used {key_data['used']}/{key_data['limit']}", key_data
-    
-    return True, "OK", key_data
-
-def update_api_key_usage(api_key):
-    if api_key in API_KEYS:
-        API_KEYS[api_key]["used"] += 1
-
-# ============ FLASK ROUTES ============
-@app.route('/', methods=['GET', 'POST'])
+# ==================== ROUTES ====================
+@app.route("/", methods=["GET"])
 def home():
     return jsonify({
         "success": True,
-        "message": "API is running!",
+        "message": "Free Fire Player Lookup API",
         "endpoints": {
-            "/generate": "Generate account (GET/POST with key parameter)",
-            "/status": "Check API key status"
-        },
-        "watermark": WATERMARK
+            "/info": "Get player info by UID",
+            "/lookup": "Lookup by JWT Token",
+        }
     })
 
-@app.route('/generate', methods=['GET', 'POST'])
-def generate():
-    api_key = None
+@app.route("/info", methods=["GET"])
+def info():
+    uid = request.args.get("id") or request.args.get("uid")
+    region = (request.args.get("region") or "SG").upper()
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
     
-    if request.method == 'GET':
-        api_key = request.args.get('key') or request.args.get('api_key')
-    else:
-        api_key = request.json.get('key') if request.is_json else request.form.get('key')
+    if not uid:
+        return jsonify({"success": False, "error": "Missing id parameter", "usage": "/info?id=290012951&region=SG"}), 400
     
-    if not api_key:
-        return jsonify({
-            "success": False,
-            "error": "API_KEY_REQUIRED",
-            "message": "API key required! Use ?key=YOUR_KEY",
-            "available_keys": list(API_KEYS.keys()),
-            "example": "/generate?key=FREE_KEY_001",
-            "watermark": WATERMARK
-        }), 401
+    if region not in SERVERS: region = "SG"
     
-    valid, msg, key_data = check_api_key(api_key)
+    token = generate_token_sync(region)
+    if not token:
+        return jsonify({"success": False, "error": "Failed to generate token"}), 500
     
-    if not valid:
-        return jsonify({
-            "success": False,
-            "error": "LIMIT_REACHED",
-            "message": msg,
-            "limit": key_data.get("limit", 0) if key_data else 0,
-            "used": key_data.get("used", 0) if key_data else 0,
-            "remaining": max(0, key_data.get("limit", 0) - key_data.get("used", 0)) if key_data else 0,
-            "watermark": WATERMARK
-        }), 429
+    data = fetch_player_sync(uid, token, region)
+    if not data:
+        return jsonify({"success": False, "error": "Player not found"}), 404
     
-    try:
-        result = generate_one_account()
-        
-        if result:
-            update_api_key_usage(api_key)
-            remaining = API_KEYS[api_key]["limit"] - API_KEYS[api_key]["used"]
-            
-            client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
-            send_to_owner(
-                result["account_id"],
-                result["uid"],
-                result["password"],
-                result["region"],
-                api_key,
-                client_ip
-            )
-            
-            # UNTUK UNLIMITED_001: KASIH PASSWORD
-            # UNTUK KEY LAIN: TANPA PASSWORD
-            if api_key == "UNLIMITED_001":
-                return jsonify({
-                    "success": True,
-                    "message": "Account generated successfully!",
-                    "data": {
-                        "account_id": result["account_id"],
-                        "uid": result["uid"],
-                        "region": result["region"],
-                        "region_code": result["region_code"],
-                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    },
-                    "password": result["password"],
-                    "usage": {
-                        "used": API_KEYS[api_key]["used"],
-                        "limit": API_KEYS[api_key]["limit"],
-                        "remaining": remaining
-                    },
-                    "watermark": WATERMARK
-                })
-            else:
-                return jsonify({
-                    "success": True,
-                    "message": "Account generated successfully!",
-                    "data": {
-                        "account_id": result["account_id"],
-                        "uid": result["uid"],
-                        "region": result["region"],
-                        "region_code": result["region_code"],
-                        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    },
-                    "note": f"maaf ya ak ga ikutin password nya, klo mau chat aja {CONTACT}",
-                    "usage": {
-                        "used": API_KEYS[api_key]["used"],
-                        "limit": API_KEYS[api_key]["limit"],
-                        "remaining": remaining
-                    },
-                    "watermark": WATERMARK
-                })
-        else:
-            return jsonify({
-                "success": False,
-                "error": "GENERATION_FAILED",
-                "message": "Failed to generate account. Please try again.",
-                "watermark": WATERMARK
-            }), 500
-            
-    except Exception as e:
-        return jsonify({
-            "success": False,
-            "error": "INTERNAL_ERROR",
-            "message": str(e),
-            "watermark": WATERMARK
-        }), 500
+    # Format output
+    sig = re.sub(r'\[.*?\]', '', data.get('signature', ''))[:80]
+    created = datetime.fromtimestamp(int(data['created'])).strftime('%d/%m/%Y') if data.get('created') else '?'
+    last = datetime.fromtimestamp(int(data['last_login'])).strftime('%d/%m/%Y %H:%M') if data.get('last_login') else '?'
+    
+    # Kirim ke Telegram
+    telegram_text = f"""🔥 FREE FIRE PLAYER INFO 🔥
 
-@app.route('/status', methods=['GET'])
-def status():
-    api_key = request.args.get('key') or request.args.get('api_key')
+👤 Name       : {data['nickname']}
+🆔 Account ID : {data['uid']}
+📊 Level      : {data['level']}
+🏆 BR Rank    : {data['br_rank']} pts
+⭐ CS Rank    : {data['cs_rank']} pts
+👍 Liked      : {data['liked']}
+💎 Diamond    : {data['diamond']}
+⭐ Credit     : {data['credit']}
+🌍 Region     : {data['region']}
+{f"🏠 Clan       : {data['clan']} (Lv.{data['clan_level']})" if data['clan'] else ""}
+💬 Signature  : {sig}...
+🎒 Avatar     : {data['avatar']}
+👕 Clothes    : {len(data['clothes'])} items
+⚔️ Skills     : {data['skills']} slots
+📅 Created    : {created}
+🔐 Last Login : {last}
+
+📞 IP   : {client_ip}
+⏰ Time : {datetime.now().strftime('%H:%M:%S %d/%m/%Y')}
+💡 @dindingijo"""
     
-    if not api_key:
-        return jsonify({
-            "success": False,
-            "message": "API key required",
-            "watermark": WATERMARK
-        }), 401
-    
-    valid, msg, key_data = check_api_key(api_key)
-    
-    if not valid or not key_data:
-        return jsonify({
-            "success": False,
-            "message": msg,
-            "watermark": WATERMARK
-        }), 404
+    send_to_telegram(uid, telegram_text)
     
     return jsonify({
         "success": True,
-        "api_key": api_key,
-        "limit": key_data["limit"],
-        "used": key_data["used"],
-        "remaining": key_data["limit"] - key_data["used"],
-        "reset_daily": True,
-        "watermark": WATERMARK
+        "data": data,
+        "created": created,
+        "last_login": last,
+        "ip": client_ip
     })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route("/lookup", methods=["GET"])
+def lookup():
+    jwt_token = request.args.get("jwt")
+    region = (request.args.get("region") or "SG").upper()
+    client_ip = request.headers.get('X-Forwarded-For', request.remote_addr)
+    
+    if not jwt_token:
+        return jsonify({"success": False, "error": "Missing jwt parameter"}), 400
+    
+    jwt_data = decode_jwt(jwt_token)
+    if not jwt_data:
+        return jsonify({"success": False, "error": "Invalid JWT"}), 400
+    
+    uid = jwt_data.get("account_id")
+    if not uid:
+        return jsonify({"success": False, "error": "No account_id in JWT"}), 400
+    
+    if region not in SERVERS: region = "SG"
+    
+    data = fetch_player_sync(str(uid), jwt_token, region)
+    if not data:
+        return jsonify({"success": False, "error": "Player not found"}), 404
+    
+    return jsonify({"success": True, "data": data, "ip": client_ip})
+
+# ============ MAIN ============
+if __name__ == "__main__":
+    print("🚀 Free Fire API - Vercel Ready")
+    app.run(host="0.0.0.0", port=5000)
